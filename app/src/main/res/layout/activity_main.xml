@@ -54,7 +54,7 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="5dp"
             android:textColor="#000"
-            android:text="Test" />
+            android:text="Modell" />
 
         <TextView
             android:id="@+id/tvCarPrice"
@@ -62,7 +62,8 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="5dp"
             android:textColor="#000"
-            android:text="Test" />
+            android:text="Preis" />
+
     </LinearLayout>
 
 

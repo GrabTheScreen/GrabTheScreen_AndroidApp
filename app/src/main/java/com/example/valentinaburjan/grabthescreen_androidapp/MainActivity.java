@@ -44,8 +44,8 @@ public class MainActivity extends Activity implements BeaconManager.RangingListe
     public String car_name, car_type, car_price, car_img;
 
     // Beacon
-    private BeaconManager _manager;
-    private Region _allEstimoteBeacons;
+    private BeaconManager beaconManager;
+    private Region estimoteBeacon_MINT;
 
     // Json
     public JSONObject jsonObject, row;
@@ -64,9 +64,10 @@ public class MainActivity extends Activity implements BeaconManager.RangingListe
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        _allEstimoteBeacons = new Region("regionId", EstimoteBeacons.ESTIMOTE_PROXIMITY_UUID, null, null);
-        _manager = new BeaconManager(this);
-        _manager.setRangingListener(this);
+        // Estimote iBeacon Mint Cocktail mit Major = 4509 und Minor=17386
+        estimoteBeacon_MINT = new Region("regionId", EstimoteBeacons.ESTIMOTE_PROXIMITY_UUID, 4509, 17386);
+        beaconManager = new BeaconManager(this);
+        beaconManager.setRangingListener(this);
 
         // get reference to the views
         etResponse = (EditText) findViewById(R.id.etResponse);
@@ -76,30 +77,23 @@ public class MainActivity extends Activity implements BeaconManager.RangingListe
         tvCarType = (TextView) findViewById(R.id.tvCarType);
         tvCarPrice = (TextView) findViewById(R.id.tvCarPrice);
 
-        // check if you are connected or not
-        if (isConnected()) {
-            tvIsConnected.setBackgroundColor(0xff00cc00);
-            tvIsConnected.setText("You are connected");
-        } else {
-            tvIsConnected.setText("You are NOT connected");
-        }
-
         // call AsynTask to perform network operation on separate thread
-        new HttpAsyncTask().execute("http://141.19.142.50:28017/gts/pictures/");
+        //new HttpAsyncTask().execute("http://141.19.142.50:28017/gts/pictures/");
+
     }
 
     @Override
     protected void onStart() {
         super.onStart();
-        _manager.connect(this);
+        beaconManager.connect(this);
     }
 
     @Override
     protected void onStop() {
         try {
         super.onStop();
-        _manager.stopRanging(_allEstimoteBeacons);
-        _manager.disconnect();
+        beaconManager.stopRanging(estimoteBeacon_MINT);
+        beaconManager.disconnect();
         } catch (RemoteException e) {
         e.printStackTrace();
         }
@@ -135,13 +129,27 @@ public class MainActivity extends Activity implements BeaconManager.RangingListe
      */
     @Override
     public void onBeaconsDiscovered(Region region, List<Beacon> beacons) {
-        //Log.d("TEST", beacons.toString());
+        Log.d("TEST", beacons.toString());
+
+        // check if you are connected or not to Server
+        if (isConnected()) {
+            tvIsConnected.setBackgroundColor(0xff00cc00);
+            tvIsConnected.setText("You are connected to Server");
+        } else {
+            tvIsConnected.setText("You are NOT connected to Server");
+        }
+
         for (Beacon beacon : beacons) {
+
             if (Utils.computeProximity(beacon).equals(Proximity.IMMEDIATE)) {
-                //System.out.println("All beacons are in immediate proximity. Distance: " + Utils.computeProximity(beacon));
+                //System.out.println("The MINT beacon is in immediate proximity. Distance: " + Utils.computeProximity(beacon));
+                tvIsConnected.setText("You are connected to iBeacon");
+
+                // Holt vom Server die Daten
                 new HttpAsyncTask().execute("http://141.19.142.50:28017/gts/pictures/");
+
             } else {
-                System.out.println("Minimum one beacon is NOT in immediate proximity.Distance: " + Utils.computeProximity(beacon));
+                System.out.println("The MINT beacon is NOT in immediate proximity. Distance: " + Utils.computeProximity(beacon));
             }
         }
     }
@@ -152,7 +160,7 @@ public class MainActivity extends Activity implements BeaconManager.RangingListe
     @Override
     public void onServiceReady() {
         try {
-        _manager.startRanging(_allEstimoteBeacons);
+        beaconManager.startRanging(estimoteBeacon_MINT);
         } catch (RemoteException e) {
         e.printStackTrace();
         }
@@ -162,7 +170,7 @@ public class MainActivity extends Activity implements BeaconManager.RangingListe
     public void onDestroy() {
         super.onDestroy();
         // When no longer needed.
-        _manager.disconnect();
+        beaconManager.disconnect();
     }
 
     public static String GET(String url) {
@@ -233,10 +241,10 @@ public class MainActivity extends Activity implements BeaconManager.RangingListe
                 tvCarType.setText(car_type = row.getString("type"));
                 tvCarPrice.setText(car_price = row.getString("price"));
                 if(row.has("image")) {
-                    System.out.println("!null");
+                    //System.out.println("!null");
                     decodeBase64(row.getString("image"));
                 } else {
-                    System.out.println("null");
+                    //System.out.println("null");
                     decodeBase64(null);
                 }
 
